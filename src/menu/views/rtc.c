@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include "../sound.h"
 #include "views.h"
+#include "../fonts.h"
 
 #define MAX(a,b)  (((a) > (b)) ? (a) : (b))
 #define MIN(a,b)  (((a) < (b)) ? (a) : (b))
@@ -172,7 +173,7 @@ static void draw (menu_t *menu, surface_t *d) {
     if (!is_editing_mode) {
          if( menu->current_time >= 0 ) {
 
-            ui_components_main_text_draw(
+            ui_components_main_text_draw(STL_DEFAULT,
                 ALIGN_CENTER, VALIGN_TOP,
                 "ADJUST REAL TIME CLOCK\n"
                 "\n"
@@ -194,7 +195,7 @@ static void draw (menu_t *menu, surface_t *d) {
          }
          else {
 
-            ui_components_main_text_draw(
+            ui_components_main_text_draw(STL_DEFAULT,
                 ALIGN_CENTER, VALIGN_TOP,
                 "ADJUST REAL TIME CLOCK\n"
                 "\n"

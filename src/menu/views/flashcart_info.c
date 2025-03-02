@@ -1,4 +1,5 @@
 #include "views.h"
+#include "../fonts.h"
 #include "../sound.h"
 #include <libcart/cart.h>
 
@@ -47,14 +48,14 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_layout_draw();
 
-    ui_components_main_text_draw(
+    ui_components_main_text_draw(STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
         "FLASHCART INFORMATION"
         "\n"
         "\n"
     );
 
-    ui_components_main_text_draw(
+    ui_components_main_text_draw(STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "\n"

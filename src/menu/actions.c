@@ -16,6 +16,10 @@ static void actions_clear (menu_t *menu) {
     menu->actions.go_left = false;
     menu->actions.go_right = false;
     menu->actions.go_fast = false;
+    menu->actions.go_c_up = false;
+    menu->actions.go_c_down = false;
+    menu->actions.go_c_left = false;
+    menu->actions.go_c_right = false;
 
     menu->actions.enter = false;
     menu->actions.back = false;
@@ -109,6 +113,14 @@ static void actions_update_buttons (menu_t *menu) {
         menu->actions.settings = true;
     } else if (pressed.l || pressed.z) {
         menu->actions.lz_context = true;
+    } else if (pressed.c_left) {
+        menu-> actions.go_c_left = true;
+    } else if (pressed.c_right) {
+        menu-> actions.go_c_right = true;
+    } else if (pressed.c_up) {
+        menu-> actions.go_c_up = true;
+    } else if (pressed.c_down) {
+        menu-> actions.go_c_down = true;
     }
 }
 

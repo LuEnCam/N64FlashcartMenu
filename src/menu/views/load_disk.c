@@ -3,6 +3,7 @@
 #include "boot/boot.h"
 #include "../sound.h"
 #include "views.h"
+#include "../fonts.h"
 
 static component_boxart_t *boxart;
 
@@ -50,7 +51,7 @@ static void draw (menu_t *menu, surface_t *d) {
     } else {
         ui_components_layout_draw();
 
-        ui_components_main_text_draw(
+        ui_components_main_text_draw(STL_DEFAULT,
             ALIGN_CENTER, VALIGN_TOP,
             "64DD disk information\n"
             "\n"
@@ -58,7 +59,7 @@ static void draw (menu_t *menu, surface_t *d) {
             menu->browser.entry->name
         );
 
-        ui_components_main_text_draw(
+        ui_components_main_text_draw(STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "\n"
             "\n"

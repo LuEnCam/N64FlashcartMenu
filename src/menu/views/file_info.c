@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 #include "../sound.h"
+#include "../fonts.h"
 
 #include "utils/fs.h"
 #include "views.h"
@@ -62,7 +63,7 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_layout_draw();
 
-    ui_components_main_text_draw(
+    ui_components_main_text_draw(STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
         "ENTRY INFORMATION\n"
         "\n"
@@ -70,7 +71,7 @@ static void draw (menu_t *menu, surface_t *d) {
         menu->browser.entry->name
     );
 
-    ui_components_main_text_draw(
+    ui_components_main_text_draw(STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "\n"

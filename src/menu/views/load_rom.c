@@ -5,6 +5,7 @@
 #include "views.h"
 #include <string.h>
 #include "utils/fs.h"
+#include "../fonts.h"
 
 static bool show_extra_info_message = false;
 static component_boxart_t *boxart;
@@ -235,7 +236,7 @@ static void draw (menu_t *menu, surface_t *d) {
     } else {
         ui_components_layout_draw();
 
-        ui_components_main_text_draw(
+        ui_components_main_text_draw(STL_DEFAULT,
             ALIGN_CENTER, VALIGN_TOP,
             "N64 ROM information\n"
             "\n"
@@ -243,7 +244,7 @@ static void draw (menu_t *menu, surface_t *d) {
             menu->browser.entry->name
         );
 
-        ui_components_main_text_draw(
+        ui_components_main_text_draw(STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "\n"
             "\n"
