@@ -20,8 +20,11 @@ static const char *emulator_extensions[] = { "nes", "smc", "gb", "gbc", "sms", "
 
 static struct stat st;
 
+bool is_memory_pak_dump;
+
 
 static char *format_file_type (char *name, bool is_directory) {
+    is_memory_pak_dump = false;
     if (is_directory) {
         return "";
     } if (file_has_extensions(name, n64_rom_extensions)) {
@@ -41,6 +44,7 @@ static char *format_file_type (char *name, bool is_directory) {
     } else if (file_has_extensions(name, music_extensions)) {
         return " Type: Music file\n";
     } else if (file_has_extensions(name, controller_pak_extensions)) {
+        is_memory_pak_dump = true;
         return " Type: Controller Pak file\n";
     } else if (file_has_extensions(name, emulator_extensions)) {
         return " Type: Emulator ROM file\n";
@@ -53,6 +57,10 @@ static void process (menu_t *menu) {
     if (menu->actions.back) {
         sound_play_effect(SFX_EXIT);
         menu->next_mode = MENU_MODE_BROWSER;
+    }
+
+    if (is_memory_pak_dump && menu->actions.enter) {
+        menu->next_mode = MENU_MODE_CONTROLLER_PAK_DUMP_INFO;
     }
 }
 
@@ -88,17 +96,26 @@ static void draw (menu_t *menu, surface_t *d) {
         ctime(&st.st_mtime)
     );
 
-    ui_components_actions_bar_text_draw(STL_DEFAULT,
-        ALIGN_LEFT, VALIGN_TOP,
-        "\n"
-        "B: Exit"
-    );
+    if (is_memory_pak_dump) {
+        ui_components_actions_bar_text_draw(STL_DEFAULT,
+            ALIGN_LEFT, VALIGN_TOP,
+            "A: Restore to Controller Pak\n"
+            "B: Back"
+        );
+    } else {
+        ui_components_actions_bar_text_draw(STL_DEFAULT,
+            ALIGN_LEFT, VALIGN_TOP,
+            "\n"
+            "B: Exit"
+        );
+    }
 
     rdpq_detach_show();
 }
 
 
 void view_file_info_init (menu_t *menu) {
+    is_memory_pak_dump = false;
     path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
 
     if (stat(path_get(path), &st)) {
@@ -110,6 +127,5 @@ void view_file_info_init (menu_t *menu) {
 
 void view_file_info_display (menu_t *menu, surface_t *display) {
     process(menu);
-
     draw(menu, display);
 }

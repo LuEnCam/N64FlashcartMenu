@@ -22,7 +22,7 @@
 typedef enum {
     MENU_MODE_NONE,
     MENU_MODE_STARTUP,
-    MENU_MODE_BROWSER,
+     MENU_MODE_BROWSER,
     MENU_MODE_FILE_INFO,
     MENU_MODE_SYSTEM_INFO,
     MENU_MODE_IMAGE_VIEWER,
@@ -32,6 +32,7 @@ typedef enum {
     MENU_MODE_SETTINGS_EDITOR,
     MENU_MODE_RTC,
     MENU_MODE_CONTROLLER_PAK,
+    MENU_MODE_CONTROLLER_PAK_DUMP_INFO,
     MENU_MODE_FLASHCART,
     MENU_MODE_LOAD_ROM,
     MENU_MODE_LOAD_DISK,
@@ -91,6 +92,7 @@ typedef struct {
         bool options;
         bool settings;
         bool lz_context;
+        bool l;
     } actions;
 
     struct {
