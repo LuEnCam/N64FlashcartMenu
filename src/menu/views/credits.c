@@ -55,7 +55,7 @@ static void draw (menu_t *menu, surface_t *d) {
         BUILD_TIMESTAMP
     );
 
-    ui_components_actions_bar_text_draw(
+    ui_components_actions_bar_text_draw(STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "B: Exit"

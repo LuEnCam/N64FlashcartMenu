@@ -4,66 +4,156 @@
 #include "views.h"
 #include "../sound.h"
 #include "../fonts.h"
+#include <fatfs/ff.h>
 
-#define ACCESSORY_BIO_SENSOR 5
+#define WAITING_TIME 0
+#define u8 unsigned char
+#define u32 unsigned long
+#define MAX_NUM_NOTES 16
+#define MAX_STRING_LENGTH 50
+#define EXTENSION ".mpk"   
+#define NOTE_EXTENSION ".smpk"
+
+char * CPAK_PATH = "sd:/cpak_saves";
+char * CPAK_PATH_NO_PRE = "/cpak_saves";
+char * CPAK_NOTES_PATH = "sd:/cpak_saves/notes";
+char * CPAK_NOTES_PATH_NO_PRE = "cpak_saves/notes";
+
+bool use_rtc;
+rtc_time_t rtc_time;
+char string_datetime_cpak[26];
+
+char controller_pak_name_notes[MAX_NUM_NOTES][MAX_STRING_LENGTH];
 
 short controller_selected;
 
-static bool is_editing_mode;
-bool has_mem;
 bool has_rumble;
 bool has_transfert;
 bool has_bio_sensor;
 
-typedef enum {
-    COL_DEFAULT,
-    COL_YELLOW,
-    COL_GREEN,
-    COL_BLUE,
-    COL_ORANGE,
-    COL_GRAY,
-} style_colors_t;
+bool has_mem;
+bool ctr_p_data_loop;
+int free_space_cpak;
+bool validate_pak;
+int total_elements;
+bool process_completed;
+bool start_complete_dump;
+bool show_confirm_message;
 
-/*
-for (int i = 0; i < LIST_ENTRIES; i++) {
-    int entry_index = starting_position + i;
+u8 fmLoadDir(const TCHAR* path, FILINFO *inf, u32 max_items);
 
-    entry_t *entry = &list[entry_index];
-
-    menu_font_style_t style;
-
-    switch (entry->type) {
-        case ENTRY_TYPE_DIR: style = STL_YELLOW; break;
-        case ENTRY_TYPE_ROM: style = STL_DEFAULT; break;
-        case ENTRY_TYPE_DISK: style = STL_DEFAULT; break;
-        case ENTRY_TYPE_EMULATOR: style = STL_DEFAULT; break;
-        case ENTRY_TYPE_SAVE: style = STL_GREEN; break;
-        case ENTRY_TYPE_IMAGE: style = STL_BLUE; break;
-        case ENTRY_TYPE_MUSIC: style = STL_BLUE; break;
-        case ENTRY_TYPE_TEXT: style = STL_ORANGE; break;
-        case ENTRY_TYPE_OTHER: style = STL_GRAY; break;
-        default: style = STL_GRAY; break;
+void create_directory(const char *dirpath) {
+    FRESULT res = f_mkdir(dirpath);
+    
+    if (res == FR_OK) {
+        printf("Directory created: %s\n", dirpath);
+    } else if (res == FR_EXIST) {
+        printf("Directory already exists: %s\n", dirpath);
+    } else {
+        printf("Failed to create directory: %s (Error Code: %d)\n", dirpath, res);
     }
-
-    rdpq_paragraph_builder_style(style);
-
-    if (entry->type == ENTRY_TYPE_DIR) {
-        rdpq_paragraph_builder_span(dir_prefix, strlen(dir_prefix));
-    }
-
-    rdpq_paragraph_builder_span(entry->name, name_lengths[i]);
-
-    if ((entry_index + 1) >= entries) {
-        break;
-    }
-
-    rdpq_paragraph_builder_newline();
 }
-*/
+
+void get_rtc_time(char* formatted_time) {
+    rtc_get(&rtc_time);
+
+    sprintf(formatted_time, "%04d.%02d.%02d_%02dh%02dm%02ds",
+            rtc_time.year, rtc_time.month + 1, rtc_time.day,
+            rtc_time.hour, rtc_time.min, rtc_time.sec);
+}
+
+void utils_truncate_string(const char *source, char *destination, int new_length) {
+    // Copy the first `new_length` characters from `source` to `destination`
+    strncpy(destination, source, new_length);
+    destination[new_length] = '\0'; // Null-terminate the truncated string
+}
+
+void free_controller_pak_name_notes() {
+
+    // Set \0 to each note
+    for (int i = 0; i < MAX_NUM_NOTES; ++i) {
+        sprintf(controller_pak_name_notes[i], " ");
+    }
+
+}
+
+char* get_cpak_save_region(char _code) {
+    switch (_code) {
+        case 'A': return "A = All"; //(Only used in 1080 Snowboarding [USA/JAP] - later \"region-free\" in Wii)";
+        case 'B': return "B = Brazil"; //(Not in GC/Wii thus possibly unlicensed, but exists in ROM data)";
+        case 'D': return "D = Germany"; //(German only)";
+        case 'E': return "E = N.Am"; //(USA, Canada, Mexico)";
+        case 'F': return "F = France"; //(French only)";
+        case 'I': return "I = Italy"; //(Italian only)";
+        case 'J': return "J = Japan";
+        case 'P': return "P = Europe"; //(sometimes including Australia)";
+        case 'S': return "S = Spain"; //(Spanish only)";
+        case 'U': return "U = Aus."; //(English-only PAL games)";
+        case 'X': return "X = Europe"; //(Alt. Languages 1)";
+        case 'Y': return "Y = Europe"; //(Alt. Languages 2)";
+        case 'G': return "G = Lodgenet NTSC"; //(NTSC, mentioned in N64 SDKs)"; G = Lodgenet/Gateway 64 NTSC
+        case 'L': return "L = Lodgenet PAL"; //(PAL, mentioned in N64 SDKs)"; L = Lodgenet/Gateway 64 PAL
+        default: return  "? = Unknown";
+    }
+}
+
+void dump_complete_cpak(int _port) {
+    process_completed = false;
+
+    uint8_t* data = malloc(MEMPAK_BLOCK_SIZE * 128 * sizeof(uint8_t));
+
+    if (!data) {
+        //"Memory allocation failed!"
+        return;
+    }
+    
+    for (int i = 0; i < 128; i++) {
+
+        surface_t *d = display_try_get();
+        rdpq_attach(d, NULL);
+
+        ui_components_layout_draw();
+
+        
+        ui_components_messagebox_draw(
+            "Do you want to dump the CPAK?\n\n"
+            "A: Yes, B: No"
+        );   
+        
+
+        if (read_mempak_sector(0, i, data + (i * MEMPAK_BLOCK_SIZE)) != 0) {
+            //"Failed to read mempak sector!"
+            free(data);
+            return;
+        }
+
+        ui_components_loader_draw((float) i / 128.0f);
+
+        rdpq_detach_show();
+    }
+
+    get_rtc_time(string_datetime_cpak);
+
+    char complete_filename[200];
+    sprintf(complete_filename, "%s/CPAK_%s%s", CPAK_PATH, string_datetime_cpak, EXTENSION);
 
 
+    FILE *fp = fopen(complete_filename, "w");
+    if (!fp) {
+        //"Failed to open file for writing!"
+        free(data);
+        return;
+    }
 
-
+    if (fwrite(data, 1, MEMPAK_BLOCK_SIZE * 128, fp) != MEMPAK_BLOCK_SIZE * 128) {
+        //"Failed to write data to file!"
+    } else {
+        process_completed = true;
+    }
+    
+    fclose(fp);
+    free(data);
+}
 
 bool check_accessories(int port) {
     
@@ -78,69 +168,77 @@ bool check_accessories(int port) {
 }
 
 
-
-
 static void process (menu_t *menu) {
     if(menu->actions.go_c_left) {
         sound_play_effect(SFX_SETTING);
         controller_selected = ((controller_selected - 1) + 4) % 4;
+        ctr_p_data_loop = false;
+        validate_pak = false;
+        has_mem = false;
     } 
     else if (menu->actions.go_c_right) {
         sound_play_effect(SFX_SETTING);
         controller_selected = ((controller_selected + 1) + 4) % 4;
+        ctr_p_data_loop = false;
+        validate_pak = false;
+        has_mem = false;    
     }
 
-    if (menu->actions.back && !is_editing_mode) {
+    if (menu->actions.back && !show_confirm_message) {
         sound_play_effect(SFX_EXIT);
         menu->next_mode = MENU_MODE_BROWSER;
     }
 
     check_accessories(controller_selected);
 
-    /*
-    else if (menu->actions.enter && !is_editing_mode && menu->current_time >= 0) {
-        rtc_tm = *gmtime(&menu->current_time);
-        is_editing_mode = true;
-    }
-    
-    
-    if (is_editing_mode) {
-        if (menu->actions.go_left) {
-            if ( editing_field_type <= RTC_EDIT_YEAR ) { editing_field_type = RTC_EDIT_SEC; }
-            else { editing_field_type = editing_field_type - 1; }
-        }
-        else if (menu->actions.go_right) {
-            if ( editing_field_type >= RTC_EDIT_SEC ) { editing_field_type = RTC_EDIT_YEAR; }
-            else { editing_field_type = editing_field_type + 1; }
-        }
-        else if (menu->actions.go_up) {
-            adjust_rtc_time( &rtc_tm, +1 );
-        }
-        else if (menu->actions.go_down) {
-            adjust_rtc_time( &rtc_tm, -1 );
-        }
-        else if (menu->actions.options) { // R button = save
-            if(rtc_is_writable()) {
-                // FIXME: settimeofday is not available in libdragon yet.
-                // struct timeval new_time = { .tv_sec = mktime(&rtc_tm) };
-                // int res = settimeofday(&new_time, NULL);
+    if (has_mem) {
 
-                rtc_time_t rtc_time = rtc_time_from_tm(&rtc_tm);
-                int res = rtc_set(&rtc_time);
-                if (res != 1) {
-                    menu_show_error(menu, "Failed to set RTC time");
+        // Pressing A : dump the controller pak
+        if (menu->actions.enter && use_rtc && !show_confirm_message) {
+            sound_play_effect(SFX_ENTER);
+            show_confirm_message = true;
+            wait_ms(WAITING_TIME);
+            return;
+        }
+
+        if (show_confirm_message) {
+            if (menu->actions.enter) {
+                show_confirm_message = false;
+                sound_play_effect(SFX_ENTER);
+                start_complete_dump = true;
+            } else if (menu->actions.back) {
+                sound_play_effect(SFX_EXIT);
+                show_confirm_message = false;
+                wait_ms(WAITING_TIME);
+            }
+            return;
+        }
+        /*
+            if (start_value) {
+                if (hasSD() && hasRTC()) {
+                graphics_draw_text(utils_disp, 10, h_space_controller_accessories, "Please wait...");
+                utils_screen_render(&utils_disp);
+                wait_ms(WAITING_TIME);
+                free_controller_pak_name_notes();
+                main_cpak_menu_page(port);
+                utils_disp = 0;
+                ctr_p = false;
+                validate_pak = false;
+                total_elements = 0;
+                } else {
+                    utils_set_font_color_red();
+                    graphics_draw_text(utils_disp, 10, h_space_controller_accessories, "No SD detected or RTC not available.");
+                    utils_screen_render(&utils_disp);
+                    utils_set_font_color_white();
+                    wait_ms(WAITING_TIME);
+                    utils_disp = 0;
                 }
             }
-            else {
-                menu_show_error(menu, "RTC is not writable");
-            }
-            is_editing_mode = false;
-        }
-        else if (menu->actions.back) { // cancel
-            is_editing_mode = false;
-        }
+            */
     }
-    */
+
+
+
 }
 
 static void draw (menu_t *menu, surface_t *d) {
@@ -150,127 +248,186 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_layout_draw();
 
-    if (!is_editing_mode) {
-         if( menu->current_time >= 0 ) {
+    char has_mem_text[64];
+    char free_space_cpak_text[64];
+    menu_font_type_t style;
 
-            ui_components_main_text_draw(STL_DEFAULT,
-                ALIGN_CENTER, VALIGN_TOP,
-                "CONTROLLER PAK MANAGEMENT\n"
-                "\n"
-                "To dump your Contr. Pak, press A.\n"
-                "To restore a dump to your Contr. Pak, press START.\n"
-                "To dump a single entry of your Contr. Pak, press L.\n"
-                "To restore a single entry, press Z\n"
-                "\n"
-                "Controller SELECTED: %d\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n",
-                 controller_selected + 1
-            );
+    if (has_mem) {
+        sprintf(has_mem_text, "CPAK detected");
 
-            char has_mem_text[64];
-            menu_font_type_t style;
+        if (ctr_p_data_loop) {
+            sprintf(has_mem_text, "%s %s", has_mem_text, " (is valid)");
+            style = STL_GREEN;
+            sprintf(free_space_cpak_text, "It has %d/123 free blocks", free_space_cpak);
 
-            if (has_mem) {
-                sprintf(has_mem_text, "This controller has a memory card\n");
-                style = STL_GREEN;
-            } else {
-                sprintf(has_mem_text, "This controller has NOT a memory card\n");
-                style = STL_ORANGE;
+        } else {
+            sprintf(free_space_cpak_text, " ");
+        }
+
+        if (validate_pak == false && validate_mempak(controller_selected) == 0) {
+            validate_pak = true;
+            
+            if (ctr_p_data_loop == false) {
+                free_space_cpak = get_mempak_free_space(controller_selected);
+
+                free_controller_pak_name_notes();
+
+                bool has_tot_element_checked = false;
+                if (total_elements > 0) has_tot_element_checked = true;
+                for (int i = 0; i < MAX_NUM_NOTES; i++) {
+                    entry_structure_t note;
+                    get_mempak_entry(controller_selected, i, &note);
+                    if (note.valid) {
+                        char temp[16];
+                        utils_truncate_string(note.name, temp, 15);
+                        snprintf(controller_pak_name_notes[i], MAX_STRING_LENGTH, "%s %s", temp , get_cpak_save_region(note.region));
+                        //snprintf(controller_pak_name_notes[i], MAX_STRING_LENGTH, "%s %s", note.name , get_cpak_save_region(note.region));
+                        if (!has_tot_element_checked) total_elements++;
+                    } else {
+                        strcpy(controller_pak_name_notes[i], " ");
+                    }
+                }
+                ctr_p_data_loop = true;
             }
 
-            
-            ui_components_main_text_draw(style,
-                ALIGN_CENTER, VALIGN_TOP,
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "%s\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n"
-                "\n",
-                has_mem_text
-            );
-            
+        } else if (validate_pak == false) {
+            sprintf(has_mem_text, "%s %s", has_mem_text, " (is NOT valid. Corrupted)");
+            style = STL_ORANGE;
+            sprintf(free_space_cpak_text, " ");
+        }
 
-            ui_components_actions_bar_text_draw(
-                ALIGN_LEFT, VALIGN_TOP,
-                "A: Dump Contr. Pak\n"
-                "L: Dump single entry\n"
-            );
-            ui_components_actions_bar_text_draw(
-                ALIGN_RIGHT, VALIGN_TOP,
-                "START: Restore Contr. Pak\n"
-                "Z: Dump single entry\n"
-            );
-         }
-         else {
-
-            ui_components_main_text_draw(STL_DEFAULT,
-                ALIGN_CENTER, VALIGN_TOP,
-                "ADJUST REAL TIME CLOCK\n"
-                "\n"
-                "\n"
-                "This cart does not support a real time clock."
-                "\n"
-                "Current date & time: %s\n"
-                "\n",
-                menu->current_time >= 0 ? ctime(&menu->current_time) : "Unknown"
-            );
-
-            ui_components_actions_bar_text_draw(
-                ALIGN_LEFT, VALIGN_TOP,
-                "\n"
-                "B: Back"
-            );
-         }
+    } else {
+        sprintf(has_mem_text, "NO CPAK detected");
+        style = STL_ORANGE;
+        sprintf(free_space_cpak_text, " ");
+        validate_pak = false;
+        ctr_p_data_loop = false;
+        free_space_cpak = 0;
     }
-    else {
-        ui_components_actions_bar_text_draw(
-            ALIGN_RIGHT, VALIGN_TOP,
-            "Up/Down: Adjust Field\n"
-            "Left/Right: Switch Field"
+
+    ui_components_main_text_draw(STL_DEFAULT,
+        ALIGN_CENTER, VALIGN_TOP,
+        "CONTROLLER PAK MANAGEMENT\n"
+    );
+
+    ui_components_main_text_draw(STL_DEFAULT,
+        ALIGN_RIGHT, VALIGN_TOP,
+        "B: Back\n"
+    );
+
+    ui_components_main_text_draw(STL_DEFAULT,
+        ALIGN_LEFT, VALIGN_TOP,
+        "\n"
+        "Controller selected: %d\n",
+            controller_selected + 1
+    );
+
+    ui_components_main_text_draw(style,
+        ALIGN_LEFT, VALIGN_TOP,
+        "\n"
+        "                        %s\n",
+        has_mem_text
+    );
+
+    if (has_mem) {
+        ui_components_main_text_draw(STL_DEFAULT,
+            ALIGN_CENTER, VALIGN_TOP,
+            "\n"
+            "\n"
+            "%s\n",
+            free_space_cpak_text
         );
-        ui_components_actions_bar_text_draw(
+
+        ui_components_main_text_draw(style,
             ALIGN_LEFT, VALIGN_TOP,
-            "R: Save\n"
-            "B: Back"
+            "\n"
+            "\n"
+            "\n"
+            "N.01: %s\n"
+            "N.02: %s\n"
+            "N.03: %s\n"
+            "N.04: %s\n"
+            "N.05: %s\n"
+            "N.06: %s\n"
+            "N.07: %s\n"
+            "N.08: %s\n"
+            "N.09: %s\n"
+            "N.10: %s\n"
+            "N.11: %s\n"
+            "N.12: %s\n"
+            "N.13: %s\n"
+            "N.14: %s\n"
+            "N.15: %s\n"
+            "N.16: %s\n",
+            controller_pak_name_notes[0],
+            controller_pak_name_notes[1],
+            controller_pak_name_notes[2],
+            controller_pak_name_notes[3],
+            controller_pak_name_notes[4],
+            controller_pak_name_notes[5],
+            controller_pak_name_notes[6],
+            controller_pak_name_notes[7],
+            controller_pak_name_notes[8],
+            controller_pak_name_notes[9],
+            controller_pak_name_notes[10],
+            controller_pak_name_notes[11],
+            controller_pak_name_notes[12],
+            controller_pak_name_notes[13],
+            controller_pak_name_notes[14],
+            controller_pak_name_notes[15],
+            controller_pak_name_notes[16]
         );
     }
 
-    /*
-    if (is_editing_mode) {
-        rtc_ui_component_editdatetime_draw(rtc_tm, editing_field_type);
-    }
-    */
+    style = (has_mem && validate_pak) ? STL_DEFAULT : STL_GRAY;
+    
 
+    ui_components_actions_bar_text_draw(style,
+        ALIGN_LEFT, VALIGN_TOP,
+        "A: Dump Pak\n"
+        "L: Dump single Note\n"
+    );
+    ui_components_actions_bar_text_draw(style,
+        ALIGN_RIGHT, VALIGN_TOP,
+        "START: Restore Pak\n"
+        "Z: Restore single Note\n"
+    );
+
+    if (show_confirm_message && !start_complete_dump) {
+        ui_components_messagebox_draw(
+            "Do you want to dump the CPAK?\n\n"
+            "A: Yes, B: No"
+        );   
+    } 
+
+    if (start_complete_dump) {
+        rdpq_detach_show();
+        dump_complete_cpak(controller_selected);
+        start_complete_dump = false;
+        return;
+    }
+        
     rdpq_detach_show();
 }
 
 void view_controller_pak_init (menu_t *menu) {
-    is_editing_mode = false;
     controller_selected = 0;
+    ctr_p_data_loop = false;
+    validate_pak = false;
+    has_mem = false;
+    free_space_cpak = 0;
+    total_elements = 0;
+    process_completed = false;
+    start_complete_dump = false;
+    show_confirm_message = false;
+
+    use_rtc = menu->current_time >= 0 ? true : false;
+
+    
+    create_directory(CPAK_PATH_NO_PRE);
+    create_directory(CPAK_NOTES_PATH_NO_PRE);
+
+
 }
 
 void view_controller_pak_display (menu_t *menu, surface_t *display) {

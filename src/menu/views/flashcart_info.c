@@ -86,7 +86,7 @@ static void draw (menu_t *menu, surface_t *d) {
         //format_diagnostic_data(flashcart_has_feature(FLASHCART_FEATURE_DIAGNOSTIC_DATA))
     );
 
-    ui_components_actions_bar_text_draw(
+    ui_components_actions_bar_text_draw(STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "B: Back"

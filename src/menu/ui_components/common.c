@@ -137,7 +137,7 @@ void ui_components_messagebox_draw (char *fmt, ...) {
     rdpq_paragraph_free(paragraph);
 }
 
-void ui_components_main_text_draw(menu_font_type_t style, rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...) {
+void ui_components_main_text_draw (menu_font_type_t style, rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...) {
     char buffer[1024];
     size_t nbytes = sizeof(buffer);
 
@@ -168,7 +168,7 @@ void ui_components_main_text_draw(menu_font_type_t style, rdpq_align_t align, rd
     }
 }
 
-void ui_components_actions_bar_text_draw (rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...) {
+void ui_components_actions_bar_text_draw (menu_font_type_t style, rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...) {
     char buffer[256];
     size_t nbytes = sizeof(buffer);
 
@@ -179,6 +179,7 @@ void ui_components_actions_bar_text_draw (rdpq_align_t align, rdpq_valign_t vali
 
     rdpq_text_printn(
         &(rdpq_textparms_t) {
+            .style_id = style,
             .width = VISIBLE_AREA_WIDTH - (TEXT_MARGIN_HORIZONTAL * 2),
             .height = VISIBLE_AREA_Y1 - LAYOUT_ACTIONS_SEPARATOR_Y - BORDER_THICKNESS - (TEXT_MARGIN_VERTICAL * 2),
             .align = align,

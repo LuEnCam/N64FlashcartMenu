@@ -263,13 +263,13 @@ static void draw (menu_t *menu, surface_t *d) {
             format_rom_save_type(rom_info_get_save_type(&menu->load.rom_info), menu->load.rom_info.features.controller_pak)
         );
 
-        ui_components_actions_bar_text_draw(
+        ui_components_actions_bar_text_draw(STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "A: Load and run ROM\n"
             "B: Back"
         );
 
-        ui_components_actions_bar_text_draw(
+        ui_components_actions_bar_text_draw(STL_DEFAULT,
             ALIGN_RIGHT, VALIGN_TOP,
             "L|Z: Extra Info\n"
             "R:    Options"
