@@ -157,154 +157,9 @@ void dump_complete_cpak(int _port) {
     free(data);
 }
 
-void write_complete_cpak(int _port) {
-
-
-
-
-
-
-
-
-    /*
-    process_completed = false;
-
-    char *mpkFiles[200];
-    int mpkCount;
-    unsigned short selected_index = 0;
-
-    //struct controller_data output;
-
-    //page_cpak = 0;
-    //total_elements_cpak = 0;
-
-    listFiles(mpkFiles, &mpkCount , CPAK_PATH_NO_PRE, "mpk");
-
-    //total_elements_cpak = mpkCount;
-
+bool check_accessories(int controller) {
     
-    while(true) {
-
-        graphics_draw_text(utils_disp, 10, h_space_cpak, "Which dump would you like to write ?");
-        inc_h_txt(&h_space_cpak);
-
-        draw_action_info(&utils_disp, &h_space_cpak);
-
-        inc_h_txt(&h_space_cpak);
-
-        int elements_per_page = 4;
-        int tot_page = (total_elements_cpak / elements_per_page); 
-        if ((total_elements_cpak % elements_per_page) == 0 ) tot_page --;
-
-        if (left_value && page_cpak > 0){
-            left_value = false;
-            page_cpak--;
-            wait_ms(WAITING_TIME);
-        }
-
-        if (right_value && page_cpak < tot_page) {
-            right_value = false;
-            page_cpak++;
-            wait_ms(WAITING_TIME);
-        }
-
-        int j = page_cpak * elements_per_page;
-        int k = ((page_cpak + 1) * elements_per_page);
-
-        for (int i = j; i < k && i < total_elements_cpak; i++) {
-            sprintf(text_output, "[%d] - %s", i, mpkFiles[i]);
-            graphics_draw_text(utils_disp, 10, h_space_cpak, text_output);
-            inc_h_txt(&h_space_cpak);
-        }
-
-        inc_h_txt(&h_space_cpak);
-        sprintf(text_output, "Page %d/%d", page_cpak + 1, tot_page + 1);
-        graphics_draw_text(utils_disp, 240, h_space_cpak, text_output);
-        inc_h_txt(&h_space_cpak);
-
-        sprintf(text_output, "Selected index : [%d]", selected_index);
-        graphics_draw_text(utils_disp, 10, h_space_cpak, text_output);
-        inc_h_txt(&h_space_cpak);
-
-        utils_screen_render(&utils_disp);
-
-
-        if (a_value) {
-            a_value = false;
-            uint8_t* data = malloc(MEMPAK_BLOCK_SIZE * 128 * sizeof(uint8_t));
-            if (!data) {
-                //"Memory allocation failed!"
-                return;
-            }
-
-            char filename[255];
-
-            sprintf(filename, "%s/%s", CPAK_PATH, mpkFiles[selected_index]);
-
-            FILE *fp = fopen(filename, "r");
-            if (!fp) {
-                //"Failed to open file for reading!"
-                free(data);
-                return;
-            }
-
-            if (fread(data, 1, MEMPAK_BLOCK_SIZE * 128, fp) != MEMPAK_BLOCK_SIZE * 128) {
-                //"Failed to read data from file!"
-                fclose(fp);
-                free(data);
-                return;
-            }
-            fclose(fp);
-
-            for (int i = 0; i < 128; i++) { 
-                if (write_mempak_sector(0, i, data + (i * MEMPAK_BLOCK_SIZE)) != 0) {
-                    //"Failed to write to mempak sector!"
-                    free(data);
-                    return;
-                }
-                utils_disp = display_get();
-                sprintf(text_output, "Processing... (%d%%)", (100 * i) / 128);
-                graphics_draw_text(utils_disp, 10, h_space_cpak, text_output);
-                utils_screen_render(&utils_disp);
-            }
-
-            process_completed = true;
-
-            free(data);
-            free_controller_pak_name_entries_manager(); 
-            break;
-        }
-
-        if (up_value && selected_index < mpkCount -1) {
-            up_value = false;
-            selected_index += 1;
-            wait_ms(WAITING_TIME);
-        } 
-        if (down_value && selected_index > 0) {
-            down_value = false;
-            selected_index -= 1;
-            wait_ms(WAITING_TIME);
-        }
-
-        if (z_value) {
-            z_value = false;
-            graphics_draw_text(utils_disp, 160, h_space_cpak, "Please wait...");
-            wait_ms(WAITING_TIME);
-            break;
-        }
-
-
-    }
-
-    for (int i = 0; i < mpkCount; i++) {
-        free(mpkFiles[i]); // Don't forget to free the allocated memory
-    }
-    */
-}
-
-bool check_accessories(int port) {
-    
-    joypad_accessory_type_t val =  joypad_get_accessory_type(controller_selected);
+    joypad_accessory_type_t val =  joypad_get_accessory_type(controller);
 
     has_rumble    = val == JOYPAD_ACCESSORY_TYPE_RUMBLE_PAK;
     has_transfert = val == JOYPAD_ACCESSORY_TYPE_TRANSFER_PAK;
@@ -318,13 +173,13 @@ bool check_accessories(int port) {
 static void process (menu_t *menu) {
 
     if (!show_complete_dump_confirm_message && !show_complete_write_confirm_message) {
-        if(menu->actions.go_c_left) {
+        if(menu->actions.go_left) {
             sound_play_effect(SFX_SETTING);
             controller_selected = ((controller_selected - 1) + 4) % 4;
             ctr_p_data_loop = false;
             validate_pak = false;
             has_mem = false;
-        } else if (menu->actions.go_c_right) {
+        } else if (menu->actions.go_right) {
             sound_play_effect(SFX_SETTING);
             controller_selected = ((controller_selected + 1) + 4) % 4;
             ctr_p_data_loop = false;
@@ -346,8 +201,8 @@ static void process (menu_t *menu) {
             show_complete_dump_confirm_message = true;
             return;
         } 
-        // Pressing L : write a controller pak dump
-        else if (menu->actions.l && use_rtc && !show_complete_write_confirm_message && !show_complete_dump_confirm_message) {
+        // Pressing START : write a controller pak dump
+        else if (menu->actions.settings && use_rtc && !show_complete_write_confirm_message && !show_complete_dump_confirm_message) {
             sound_play_effect(SFX_ENTER);
             show_complete_write_confirm_message = true;
             return;
@@ -450,14 +305,14 @@ static void draw (menu_t *menu, surface_t *d) {
     ui_components_main_text_draw(STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
-        "Controller selected: %d\n",
+        "Controller selected: < %d >\n",
             controller_selected + 1
     );
 
     ui_components_main_text_draw(style,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
-        "                        %s\n",
+        "                            %s\n",
         has_mem_text
     );
 
@@ -532,8 +387,8 @@ static void draw (menu_t *menu, surface_t *d) {
         );   
     } else if (show_complete_write_confirm_message) {
         ui_components_messagebox_draw(
-            "To write a complete dump, go to the directory \"/cpak_saves\"\n"
-            "and select a file with the extension \".mpk\".\n\n"
+            "To write a complete dump, select a file"
+            " with the extension \".mpk\".\n\n"
             "B: Back"
         );   
     } 
