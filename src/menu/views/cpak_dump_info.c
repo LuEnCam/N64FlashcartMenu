@@ -5,6 +5,7 @@
 #include "../sound.h"
 #include "../fonts.h"
 #include <fatfs/ff.h>
+
 #include "utils/cpakfs_utils.h"
 
 
@@ -33,6 +34,7 @@ static bool restore_controller_pak(int controller) {
 
     FILE *fp = fopen(cpak_path, "rb");
     if (!fp) {
+
         sprintf(failure_message, "Failed to open file for reading!");
         free(data);
         return false;
@@ -187,3 +189,4 @@ void view_controller_pak_dump_info_display (menu_t *menu, surface_t *display) {
     process(menu);
     draw(menu, display);
 }
+
