@@ -5,6 +5,7 @@
 
 static struct stat st;
 bool is_memory_pak_dump;
+bool is_memory_pak_dump_note;
 
 static file_info_t info;
 
@@ -56,6 +57,7 @@ static void draw (menu_t *menu, surface_t *d) {
 
 void view_file_info_init (menu_t *menu) {
     is_memory_pak_dump = false;
+    is_memory_pak_dump_note = false;
     path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
 
     if (stat(path_get(path), &st)) {
