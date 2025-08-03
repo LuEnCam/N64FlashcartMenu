@@ -83,18 +83,20 @@ static void process(menu_t *menu) {
             menu->next_mode = MENU_MODE_LOAD_ROM;
             sound_play_effect(SFX_ENTER);
         }
-    } else if (menu->actions.previous_tab) {
+    } else if (menu->actions.go_left) {
         if(tab_context == BOOKKEEPING_TAB_CONTEXT_FAVORITE) {
             menu->next_mode = MENU_MODE_HISTORY;
         } else if(tab_context == BOOKKEEPING_TAB_CONTEXT_HISTORY) {
             menu->next_mode = MENU_MODE_BROWSER;
-        }        
-    } else if (menu->actions.next_tab) {
+        }
+        sound_play_effect(SFX_CURSOR);       
+    } else if (menu->actions.go_right) {
         if(tab_context == BOOKKEEPING_TAB_CONTEXT_FAVORITE) {
             menu->next_mode = MENU_MODE_BROWSER;
         } else if(tab_context == BOOKKEEPING_TAB_CONTEXT_HISTORY) {
             menu->next_mode = MENU_MODE_FAVORITE;
         }
+        sound_play_effect(SFX_CURSOR);
     }else if(tab_context == BOOKKEEPING_TAB_CONTEXT_FAVORITE && menu->actions.options && selected_item != -1) {
         bookkeeping_favorite_remove(&menu->bookkeeping, selected_item);
         reset_selected(menu);
@@ -166,14 +168,16 @@ static void draw(menu_t *menu, surface_t *display) {
     draw_list(menu, display);
 
     if(selected_item != -1) {
-        ui_components_actions_bar_text_draw(STL_DEFAULT,
+        ui_components_actions_bar_text_draw(
+            STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "A: Load Game\n"
             "\n"
         );
         
         if(tab_context == BOOKKEEPING_TAB_CONTEXT_FAVORITE && selected_item != -1) {
-            ui_components_actions_bar_text_draw(STL_DEFAULT,
+            ui_components_actions_bar_text_draw(
+                STL_DEFAULT,
                 ALIGN_RIGHT, VALIGN_TOP,
                 "R: Remove item\n"
                 "\n"
@@ -181,9 +185,10 @@ static void draw(menu_t *menu, surface_t *display) {
         }
     }
 
-    ui_components_actions_bar_text_draw(STL_DEFAULT,
+    ui_components_actions_bar_text_draw(
+        STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
-        "<C Change Tab C>\n"
+        "< Change Tab >\n"
         "\n"
     );    
 

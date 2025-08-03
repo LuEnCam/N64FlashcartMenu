@@ -65,11 +65,12 @@ static void draw (menu_t *menu, surface_t *d) {
     ui_components_background_draw();
 
     if (menu->boot_pending.disk_file) {
-        ui_components_loader_draw(0.0f);
+        ui_components_loader_draw(0.0f, NULL);
     } else {
         ui_components_layout_draw();
 
-        ui_components_main_text_draw(STL_DEFAULT,
+        ui_components_main_text_draw(
+            STL_DEFAULT,
             ALIGN_CENTER, VALIGN_TOP,
             "64DD disk information\n"
             "\n"
@@ -77,7 +78,8 @@ static void draw (menu_t *menu, surface_t *d) {
             disk_filename
         );
 
-        ui_components_main_text_draw(STL_DEFAULT,
+        ui_components_main_text_draw(
+            STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "\n\n\n\n"
             "%s%s\n",
@@ -85,14 +87,16 @@ static void draw (menu_t *menu, surface_t *d) {
             menu->load.rom_path ? path_last_get(menu->load.rom_path) : ""
         );
 
-        ui_components_main_text_draw(STL_DEFAULT,
+        ui_components_main_text_draw(
+            STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "\n\n\n\n\n\n"
             "Description:\n\t%s\n",
             "None."
         );
 
-        ui_components_main_text_draw(STL_DEFAULT,
+        ui_components_main_text_draw(
+            STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "\n\n\n\n\n\n\n\n\n\n\n\n"
             " Region:\t\t%s\n"
@@ -107,20 +111,23 @@ static void draw (menu_t *menu, surface_t *d) {
             menu->load.disk_info.disk_type
         );
 
-        ui_components_actions_bar_text_draw(STL_DEFAULT,
+        ui_components_actions_bar_text_draw(
+            STL_DEFAULT,
             ALIGN_LEFT, VALIGN_TOP,
             "A: Load and run 64DD disk\n"
             "B: Exit\n"
         );
 
         if (menu->load.rom_path) {
-            ui_components_actions_bar_text_draw(STL_DEFAULT,
+            ui_components_actions_bar_text_draw(
+                STL_DEFAULT,
                 ALIGN_RIGHT, VALIGN_TOP,
                 "L|Z: Load with ROM\n"
                 "R:   Options\n"
             );
         } else {
-            ui_components_actions_bar_text_draw(STL_DEFAULT,
+            ui_components_actions_bar_text_draw(
+                STL_DEFAULT,
                 ALIGN_RIGHT, VALIGN_TOP,
                 "\n"
                 "R:   Options\n"
@@ -144,8 +151,8 @@ static void draw_progress (float progress) {
         rdpq_attach(d, NULL);
 
         ui_components_background_draw();
-
-        ui_components_loader_draw(progress);
+        
+        ui_components_loader_draw(progress, "Loading 64DD disk...");
 
         rdpq_detach_show();
     }
@@ -202,7 +209,7 @@ static bool load_rom(menu_t* menu, path_t* rom_path) {
 
         menu->load.rom_path = path_clone(rom_path);
 
-        rom_err_t err = rom_info_load(rom_path, &menu->load.rom_info);
+        rom_err_t err = rom_config_load(rom_path, &menu->load.rom_info);
         if (err != ROM_OK) {
             path_free(menu->load.rom_path);
             menu->load.rom_path = NULL;

@@ -83,8 +83,9 @@ void ui_components_seekbar_draw(float progress);
  * @brief Draw a loader component.
  * 
  * @param position Position value (0.0 to 1.0).
+ * @param msg Message to display, truncated to 30 characters.
  */
-void ui_components_loader_draw(float position);
+void ui_components_loader_draw(float progress, const char *msg);
 
 /**
  * @brief Draw a scrollbar component.
@@ -127,6 +128,7 @@ void ui_components_messagebox_draw(char *fmt, ...);
 /**
  * @brief Draw the main text component.
  * 
+ * @param style The font style.
  * @param align Horizontal alignment.
  * @param valign Vertical alignment.
  * @param fmt Format string for the text.
@@ -147,12 +149,13 @@ void ui_components_main_text_draw_specific_font(menu_font_type_t font, menu_font
 /**
  * @brief Draw the actions bar text component.
  * 
+ * @param style The font style.
  * @param align Horizontal alignment.
  * @param valign Vertical alignment.
  * @param fmt Format string for the text.
  * @param ... Additional arguments for the format string.
  */
-void ui_components_actions_bar_text_draw (menu_font_type_t style, rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...);
+void ui_components_actions_bar_text_draw(menu_font_type_t style, rdpq_align_t align, rdpq_valign_t valign, char *fmt, ...);
 
 /**
  * @brief Initialize the background component.
@@ -284,5 +287,16 @@ void ui_components_tabs_draw(const char **text, int count, int selected, float w
  * @param selected Index of the selected tab.
  */
 void ui_components_tabs_common_draw(int selected);
+
+/**
+ * @brief Draw a value editor component.
+ * 
+ * @param header_text Array of header text for the values.
+ * @param value_text Array of value text to be displayed.
+ * @param count Number of values.
+ * @param selected Index of the selected value.
+ * @param width Width of each value box.
+ */
+void ui_component_value_editor(const char **header_text, const char **value_text, int count, int selected, float width );
 
 #endif /* UI_COMPONENTS_H__ */
