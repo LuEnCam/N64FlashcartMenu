@@ -475,8 +475,8 @@ static void draw (menu_t *menu, surface_t *d) {
     ui_components_actions_bar_text_draw(
         STL_DEFAULT,
         ALIGN_RIGHT, VALIGN_TOP,
-        "^%02XStart: Settings^00\n"
-        "^%02XR:  Options^00",
+        "Start: Settings\n"
+        "R:  Options",
         menu->browser.entries == 0 ? STL_GRAY : STL_DEFAULT
     );
 
