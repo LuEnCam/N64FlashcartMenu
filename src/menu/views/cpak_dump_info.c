@@ -5,6 +5,7 @@
 #include "../sound.h"
 #include "../fonts.h"
 #include <fatfs/ff.h>
+#include "utils/cpakfs_utils.h"
 
 #include "utils/cpakfs_utils.h"
 
