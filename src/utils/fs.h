@@ -90,7 +90,6 @@ bool file_fill(char *path, uint8_t value);
  */
 bool file_has_extensions(char *path, const char *extensions[]);
 
-
 /**
  * @brief Check if a directory exists at the given path.
  *
