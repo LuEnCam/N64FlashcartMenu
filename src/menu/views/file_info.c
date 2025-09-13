@@ -4,8 +4,8 @@
 #include "views.h"
 
 static struct stat st;
-bool is_memory_pak_dump;
-bool is_memory_pak_dump_note;
+static bool is_memory_pak_dump;
+static bool is_memory_pak_dump_note;
 
 static file_info_t info;
 
