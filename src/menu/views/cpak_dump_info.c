@@ -35,7 +35,6 @@ static bool restore_controller_pak(int controller) {
 
     FILE *fp = fopen(cpak_path, "rb");
     if (!fp) {
-
         sprintf(failure_message, "Failed to open file for reading!");
         free(data);
         return false;

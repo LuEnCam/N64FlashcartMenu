@@ -64,9 +64,9 @@ void unmount_all_cpakfs() {
     for (int i = 0; i < 4; i++) {
         int val = cpakfs_unmount(i);
         if (val < 0) {
-            debugf("Failed to unmount cpakfs on port %d: %d\n", i+1, val);
+            //debugf("Failed to unmount cpakfs on port %d: %d\n", i+1, val);
         } else {
-            debugf("Unmounted cpakfs on port %d\n", i+1);
+            //debugf("Unmounted cpakfs on port %d\n", i+1);
         }
     }
 }
