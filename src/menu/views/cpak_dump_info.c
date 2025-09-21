@@ -189,4 +189,3 @@ void view_controller_pak_dump_info_display (menu_t *menu, surface_t *display) {
     process(menu);
     draw(menu, display);
 }
-
