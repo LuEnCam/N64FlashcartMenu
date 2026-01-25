@@ -9,8 +9,9 @@
 
 #include <stdbool.h>
 
-#define SOUND_MP3_PLAYER_CHANNEL    (0) /**< Channel for MP3 player sound */
-#define SOUND_SFX_CHANNEL           (2) /**< Channel for sound effects */
+#define SOUND_SFX_CHANNEL           (0) /**< Channel for sound effects */
+#define SOUND_MP3_PLAYER_CHANNEL    (2) /**< Channel for MP3 player sound */
+
 
 /**
  * @brief Enumeration of available sound effects for menu interactions.
@@ -52,16 +53,31 @@ void sound_init_sfx(void);
 
 /**
  * @brief Enable or disable sound effects.
+ * 
  * @param enable True to enable sound effects, false to disable.
  */
-void sound_use_sfx(bool);
+void sound_use_sfx(bool enable);
 
 /**
  * @brief Play a specified sound effect.
+ * 
  * @param sfx The sound effect to play, as defined in sound_effect_t.
  */
 void sound_play_effect(sound_effect_t sfx);
-void sound_deinit (void);
-void sound_poll (void);
+
+/**
+ * @brief Deinitialize the sound system.
+ * 
+ * This function deinitializes the sound system, releasing any resources
+ * that were allocated.
+ */
+void sound_deinit(void);
+
+/**
+ * @brief Poll the sound system.
+ * 
+ * This function polls the sound system, updating its state as necessary.
+ */
+void sound_poll(void);
 
 #endif /* SOUND_H__ */

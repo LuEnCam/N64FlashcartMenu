@@ -1,18 +1,33 @@
+/**
+ * @file context_menu.c
+ * @brief Implementation of the context menu UI component.
+ * @ingroup ui_components
+ */
+
 #include "../ui_components.h"
 #include "../fonts.h"
 #include "../sound.h"
 #include "constants.h"
 
-
-static component_context_menu_t *get_current_submenu (component_context_menu_t *cm) {
+/**
+ * @brief Get the current submenu from a context menu component.
+ *
+ * @param cm Pointer to the context menu component.
+ * @return Pointer to the current submenu (deepest submenu in the chain).
+ */
+static component_context_menu_t *get_current_submenu(component_context_menu_t *cm) {
     while (cm->submenu != NULL) {
         cm = cm->submenu;
     }
     return cm;
 }
 
-
-void ui_components_context_menu_init (component_context_menu_t *cm) {
+/**
+ * @brief Initialize the context menu component.
+ *
+ * @param cm Pointer to the context menu component.
+ */
+void ui_components_context_menu_init(component_context_menu_t *cm) {
     cm->row_selected = -1;
     cm->row_count = 0;
     cm->hide_pending = false;
@@ -22,12 +37,24 @@ void ui_components_context_menu_init (component_context_menu_t *cm) {
     }
 }
 
-void ui_components_context_menu_show (component_context_menu_t *cm) {
+/**
+ * @brief Show the context menu component (reset selection and submenu).
+ *
+ * @param cm Pointer to the context menu component.
+ */
+void ui_components_context_menu_show(component_context_menu_t *cm) {
     cm->row_selected = 0;
     cm->submenu = NULL;
 }
 
-bool ui_components_context_menu_process (menu_t *menu, component_context_menu_t *cm) {
+/**
+ * @brief Process the context menu actions (navigation, selection, etc).
+ *
+ * @param menu Pointer to the menu structure.
+ * @param cm Pointer to the context menu component.
+ * @return true if the context menu is processed, false otherwise.
+ */
+bool ui_components_context_menu_process(menu_t *menu, component_context_menu_t *cm) {
     if (!cm || (cm->row_selected < 0)) {
         return false;
     }
@@ -47,7 +74,12 @@ bool ui_components_context_menu_process (menu_t *menu, component_context_menu_t 
         if (cm->list[cm->row_selected].submenu) {
             cm->submenu = cm->list[cm->row_selected].submenu;
             ui_components_context_menu_init(cm->submenu);
-            cm->submenu->row_selected = 0;
+            // Use custom default selection if available, otherwise default to 0
+            if (cm->submenu->get_default_selection) {
+                cm->submenu->row_selected = cm->submenu->get_default_selection(menu);
+            } else {
+                cm->submenu->row_selected = 0;
+            }
             cm->submenu->parent = cm;
         } else if (cm->list[cm->row_selected].action) {
             cm->list[cm->row_selected].action(menu, cm->list[cm->row_selected].arg);
@@ -71,7 +103,12 @@ bool ui_components_context_menu_process (menu_t *menu, component_context_menu_t 
     return true;
 }
 
-void ui_components_context_menu_draw (component_context_menu_t *cm) {
+/**
+ * @brief Draw the context menu UI component.
+ *
+ * @param cm Pointer to the context menu component.
+ */
+void ui_components_context_menu_draw(component_context_menu_t *cm) {
     if (!cm || (cm->row_selected < 0)) {
         return;
     }

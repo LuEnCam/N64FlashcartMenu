@@ -25,26 +25,28 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_layout_draw();
 
-    ui_components_main_text_draw(STL_DEFAULT,
+    ui_components_main_text_draw(
+        STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
         "MENU INFORMATION"
     );
 
-    ui_components_main_text_draw(STL_DEFAULT,
+    ui_components_main_text_draw(
+        STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "\n"
         "Menu version: %s\n"
         "Build timestamp: %s\n"
         "\n"
-        "Github:\n"
+        "Github - Website:\n"
         " https://github.com/Polprzewodnikowy/N64FlashcartMenu\n"
         "Authors:\n"
         " Robin Jones / NetworkFusion\n"
         " Mateusz Faderewski / Polprzewodnikowy\n"
-        "Credits:\n"
-        " N64Brew / libDragon contributors\n"
-        "\n"
+        "Contributors:\n"
+        " Thank you to ALL project contributors,\n"
+        " no matter how small the commit.\n"
         "OSS software used:\n"
         " libdragon (UNLICENSE License)\n"
         " libspng (BSD 2-Clause License)\n"
@@ -55,7 +57,8 @@ static void draw (menu_t *menu, surface_t *d) {
         BUILD_TIMESTAMP
     );
 
-    ui_components_actions_bar_text_draw(STL_DEFAULT,
+    ui_components_actions_bar_text_draw(
+        STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "B: Exit"

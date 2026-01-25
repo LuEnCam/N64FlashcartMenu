@@ -1,3 +1,10 @@
+/**
+ * @file rom_info.c
+ * @brief ROM Information component implementation
+ * @ingroup menu
+ */
+
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,91 +54,45 @@ typedef struct  __attribute__((packed)) {
 
 /** @brief ROM Information Match Type Enumeration. */
 typedef enum {
-    // Check only game code
-    MATCH_TYPE_ID,
-
-    // Check game code and region
-    MATCH_TYPE_ID_REGION,
-
-    // Check game code, region and version
-    MATCH_TYPE_ID_REGION_VERSION,
-
-    // Check game check code
-    MATCH_TYPE_CHECK_CODE,
-
-    // Check for homebrew header ID
-    MATCH_TYPE_HOMEBREW_HEADER,
-
-    // List end marker
-    MATCH_TYPE_END
+    MATCH_TYPE_ID, /**< Check only game code */
+    MATCH_TYPE_ID_REGION, /**< Check game code and region */
+    MATCH_TYPE_ID_REGION_VERSION, /**< Check game code, region and version */
+    MATCH_TYPE_CHECK_CODE, /**< Check game check code */
+    MATCH_TYPE_HOMEBREW_HEADER, /**< Check for homebrew header ID */
+    MATCH_TYPE_END /**< List end marker */
 } match_type_t;
 
+/** @brief ROM Features Enumeration. */
 typedef enum {
-    // No features supported
-    FEAT_NONE = 0,
-
-    // Controller Pak
-    FEAT_CPAK = (1 << 0),
-
-    // Rumble Pak
-    FEAT_RPAK = (1 << 1),
-
-    // Transfer Pak
-    FEAT_TPAK = (1 << 2),
-
-    // Voice Recognition Unit
-    FEAT_VRU = (1 << 3),
-
-    // Real Time Clock
-    FEAT_RTC = (1 << 4),
-
-    // Expansion Pak (for games that will not work without it inserted into the console)
-    FEAT_EXP_PAK_REQUIRED = (1 << 5),
-
-    // Expansion Pak (for games with game play enhancements)
-    FEAT_EXP_PAK_RECOMMENDED = (1 << 6),
-
-    // Expansion Pak (for games with visual (or other) enhancements)
-    FEAT_EXP_PAK_ENHANCED = (1 << 7),
-
-    // No Expansion Pak (for games "broken" with it inserted into the console)
-    FEAT_EXP_PAK_BROKEN = (1 << 8),
-
-    // 64DD disk to ROM conversion
-    FEAT_64DD_CONVERSION = (1 << 9),
-
-    // Combo ROM + Disk games
-    FEAT_64DD_ENHANCED = (1 << 10),
+    FEAT_NONE = 0, /**< No features supported */
+    FEAT_CPAK = (1 << 0), /**< Controller Pak */
+    FEAT_RPAK = (1 << 1), /**< Rumble Pak */
+    FEAT_TPAK = (1 << 2), /**< Transfer Pak */
+    FEAT_VRU = (1 << 3), /**< Voice Recognition Unit */
+    FEAT_RTC = (1 << 4), /**< Real Time Clock */
+    FEAT_EXP_PAK_REQUIRED = (1 << 5), /**< Expansion Pak required */
+    FEAT_EXP_PAK_RECOMMENDED = (1 << 6), /**< Expansion Pak recommended */
+    FEAT_EXP_PAK_ENHANCED = (1 << 7), /**< Expansion Pak enhanced */
+    FEAT_EXP_PAK_BROKEN = (1 << 8), /**< Expansion Pak broken */
+    FEAT_64DD_CONVERSION = (1 << 9), /**< 64DD disk to ROM conversion */
+    FEAT_64DD_ENHANCED = (1 << 10) /**< Combo ROM + Disk games */
 } feat_t;
 
+/** @brief ROM Match Structure. */
 typedef struct {
-    // Which fields to check
-    match_type_t type;
-
-    // Fields to check for matching
+    match_type_t type; /**< Match type */
     union {
         struct {
-            // Game code (with media type and optional region) or unique ID
-            const char *id;
-
-            // Game version
-            uint8_t version;
+            const char *id; /**< Game code or unique ID */
+            uint8_t version; /**< Game version */
         };
-
-        // Game check code
-        uint64_t check_code;
+        uint64_t check_code; /**< Game check code */
     } fields;
-
-    // Matched game metadata
     struct {
-        // Save type (only cartridge save types)
-        rom_save_type_t save;
-
-        // Supported features
-        feat_t feat;
+        rom_save_type_t save; /**< Save type */
+        feat_t feat; /**< Supported features */
     } data;
 } match_t;
-
 
 #define MATCH_ID(i, s, f)                       { .type = MATCH_TYPE_ID, .fields = { .id = i }, .data = { .save = s, .feat = f } }
 #define MATCH_ID_REGION(i, s, f)                { .type = MATCH_TYPE_ID_REGION, .fields = { .id = i }, .data = { .save = s, .feat = f } }
@@ -154,8 +115,8 @@ static const match_t database[] = {
     MATCH_CHECK_CODE(0x9A746EBF2802EA99, SAVE_TYPE_EEPROM_4KBIT, FEAT_NONE),                                    // Toon panic
     MATCH_CHECK_CODE(0x21548CA921548CA9, SAVE_TYPE_EEPROM_4KBIT, FEAT_NONE),                                    // Mini racers
     MATCH_CHECK_CODE(0xBC9B2CC34ED04DA5, SAVE_TYPE_FLASHRAM_1MBIT, FEAT_NONE),                                  // Starcraft 64 [Prototype 2000]
-    MATCH_CHECK_CODE(0x5D40ED2C10D6ABCF, SAVE_TYPE_EEPROM_4KBIT, FEAT_NONE),                                    // Viewpoint 2064
-    MATCH_CHECK_CODE(0x7280E03F497689BA, SAVE_TYPE_EEPROM_4KBIT, FEAT_NONE),                                    // Viewpoint 2064 [ENG patch]
+    MATCH_CHECK_CODE(0x5D40ED2C10D6ABCF, SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                    // Viewpoint 2064
+    MATCH_CHECK_CODE(0x7280E03F497689BA, SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                    // Viewpoint 2064 [ENG patch]
 
     MATCH_CHECK_CODE(0xCDB8B4D08832352D, SAVE_TYPE_SRAM_256KBIT, FEAT_RPAK),                                    // Jet Force Gemini [USA CRACK]
     MATCH_CHECK_CODE(0xB66E0F7C2709C22F, SAVE_TYPE_SRAM_256KBIT, FEAT_RPAK),                                    // Jet Force Gemini [PAL CRACK]
@@ -236,6 +197,7 @@ static const match_t database[] = {
     MATCH_ID("NIC", SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                                         // Indy Racing 2000
     MATCH_ID("NIJ", SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK | FEAT_EXP_PAK_RECOMMENDED),                              // Indiana Jones and the Infernal Machine
     MATCH_ID("NIR", SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                                         // Utchan Nanchan no Hono no Challenger: Denryuu Ira Ira Bou
+    MATCH_ID("NJK", SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                                         // Viewpoint 2064 (Final Prototype) (J)
     MATCH_ID("NJM", SAVE_TYPE_EEPROM_4KBIT, FEAT_NONE),                                                         // Earthworm Jim 3D
     MATCH_ID("NK2", SAVE_TYPE_EEPROM_4KBIT, FEAT_RPAK),                                                         // Snowboard Kids 2 [Chou Snobow Kids (J)]
     MATCH_ID("NKA", SAVE_TYPE_EEPROM_4KBIT, FEAT_CPAK | FEAT_RPAK),                                             // Fighters Destiny [Fighting Cup (J)]
@@ -792,95 +754,107 @@ static void extract_rom_info (match_t *match, rom_header_t *rom_header, rom_info
     } else {
         rom_info->features.expansion_pak = EXPANSION_PAK_NONE;
     }
+
+    rom_info->metadata.esrb_age_rating = ROM_ESRB_AGE_RATING_NONE;
+    rom_info->settings.cheats_enabled = false;
+    rom_info->settings.patches_enabled = false;
 }
 
-static void load_overrides (path_t *path, rom_info_t *rom_info) {
-    path_t *overrides_path = path_clone(path);
+static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
+    path_t *rom_info_path = path_clone(path);
 
-    path_ext_replace(overrides_path, "ini");
+    path_ext_replace(rom_info_path, "ini");
 
-    mini_t *ini = mini_load(path_get(overrides_path));
+    mini_t *rom_config_ini = mini_load(path_get(rom_info_path));
 
-    rom_info->override.cic = false;
-    rom_info->override.save = false;
-    rom_info->override.tv = false;
+    rom_info->boot_override.cic = false;
+    rom_info->boot_override.save = false;
+    rom_info->boot_override.tv = false;
 
-    if (ini) {
-        rom_info->override.cic_type = mini_get_int(ini, NULL, "cic_type", ROM_CIC_TYPE_AUTOMATIC);
-        if (rom_info->override.cic_type != ROM_CIC_TYPE_AUTOMATIC) {
-            rom_info->override.cic = true;
+    if (rom_config_ini) {
+        // general
+        rom_info->settings.cheats_enabled = mini_get_bool(rom_config_ini, NULL, "cheats_enabled", false);
+        rom_info->settings.patches_enabled = mini_get_bool(rom_config_ini, NULL, "patches_enabled", false);
+
+        // metadata
+        rom_info->metadata.esrb_age_rating = mini_get_int(rom_config_ini, "metadata", "esrb_age_rating", ROM_ESRB_AGE_RATING_NONE);
+        
+        // overrides
+        rom_info->boot_override.cic_type = mini_get_int(rom_config_ini, "custom_boot", "cic_type", ROM_CIC_TYPE_AUTOMATIC);
+        if (rom_info->boot_override.cic_type != ROM_CIC_TYPE_AUTOMATIC) {
+            rom_info->boot_override.cic = true;
         }
 
-        rom_info->override.save_type = mini_get_int(ini, NULL, "save_type", SAVE_TYPE_AUTOMATIC);
-        if (rom_info->override.save_type != SAVE_TYPE_AUTOMATIC) {
-            rom_info->override.save = true;
+        rom_info->boot_override.save_type = mini_get_int(rom_config_ini, "custom_boot", "save_type", SAVE_TYPE_AUTOMATIC);
+        if (rom_info->boot_override.save_type != SAVE_TYPE_AUTOMATIC) {
+            rom_info->boot_override.save = true;
         }
 
-        rom_info->override.tv_type = mini_get_int(ini, NULL, "tv_type", ROM_TV_TYPE_AUTOMATIC);
-        if (rom_info->override.tv_type != ROM_TV_TYPE_AUTOMATIC) {
-            rom_info->override.tv = true;
+        rom_info->boot_override.tv_type = mini_get_int(rom_config_ini, "custom_boot", "tv_type", ROM_TV_TYPE_AUTOMATIC);
+        if (rom_info->boot_override.tv_type != ROM_TV_TYPE_AUTOMATIC) {
+            rom_info->boot_override.tv = true;
         }
 
-        mini_free(ini);
+        mini_free(rom_config_ini);
     }
 
-    path_free(overrides_path);
+    path_free(rom_info_path);
 }
 
-static rom_err_t save_override (path_t *path, const char *id, int value, int default_value) {
-    path_t *overrides_path = path_clone(path);
+static rom_err_t save_rom_config_setting_to_file (path_t *path, const char *type, const char *id, int value, int default_value) {
+    path_t *rom_info_path = path_clone(path);
 
-    path_ext_replace(overrides_path, "ini");
+    path_ext_replace(rom_info_path, "ini");
 
-    mini_t *ini = mini_try_load(path_get(overrides_path));
+    mini_t *rom_config_ini = mini_try_load(path_get(rom_info_path));
 
-    if (!ini) {
-        path_free(overrides_path);
+    if (!rom_config_ini) {
+        path_free(rom_info_path);
         return ROM_ERR_SAVE_IO;
     }
 
     int mini_err;
 
     if (value == default_value) {
-        mini_err = mini_delete_value(ini, NULL, id);
+        mini_err = mini_delete_value(rom_config_ini, type, id);
     } else {
-        mini_err = mini_set_int(ini, NULL, id, value);
+        mini_err = mini_set_int(rom_config_ini, type, id, value);
     }
 
     if ((mini_err != MINI_OK) && (mini_err != MINI_VALUE_NOT_FOUND)) {
-        path_free(overrides_path);
-        mini_free(ini);
+        path_free(rom_info_path);
+        mini_free(rom_config_ini);
         return ROM_ERR_SAVE_IO;
     }
 
-    bool empty = mini_empty(ini);
+    bool empty = mini_empty(rom_config_ini);
 
     if (!empty) {
-        if (mini_save(ini, MINI_FLAGS_NONE) != MINI_OK) {
-            path_free(overrides_path);
-            mini_free(ini);
+        if (mini_save(rom_config_ini, MINI_FLAGS_NONE) != MINI_OK) {
+            path_free(rom_info_path);
+            mini_free(rom_config_ini);
             return ROM_ERR_SAVE_IO;
         }
     }
 
-    mini_free(ini);
+    mini_free(rom_config_ini);
 
     if (empty) {
-        if (remove(path_get(overrides_path)) && (errno != ENOENT)) {
-            path_free(overrides_path);
+        if (remove(path_get(rom_info_path)) && (errno != ENOENT)) {
+            path_free(rom_info_path);
             return ROM_ERR_SAVE_IO;
         }
     }
 
-    path_free(overrides_path);
+    path_free(rom_info_path);
 
     return ROM_OK;
 }
 
 
 rom_cic_type_t rom_info_get_cic_type (rom_info_t *rom_info) {
-    if (rom_info->override.cic) {
-        return rom_info->override.cic_type;
+    if (rom_info->boot_override.cic) {
+        return rom_info->boot_override.cic_type;
     } else {
         return rom_info->cic_type;
     }
@@ -908,47 +882,59 @@ bool rom_info_get_cic_seed (rom_info_t *rom_info, uint8_t *seed) {
 
     *seed = cic_get_seed(cic_type);
 
-    return (!rom_info->override.cic);
+    return (!rom_info->boot_override.cic);
 }
 
-rom_err_t rom_info_override_cic_type (path_t *path, rom_info_t *rom_info, rom_cic_type_t cic_type) {
-    rom_info->override.cic = (cic_type != ROM_CIC_TYPE_AUTOMATIC);
-    rom_info->override.cic_type = cic_type;
+rom_err_t rom_config_override_cic_type (path_t *path, rom_info_t *rom_info, rom_cic_type_t cic_type) {
+    rom_info->boot_override.cic = (cic_type != ROM_CIC_TYPE_AUTOMATIC);
+    rom_info->boot_override.cic_type = cic_type;
 
-    return save_override(path, "cic_type", rom_info->override.cic_type, ROM_CIC_TYPE_AUTOMATIC);
+    return save_rom_config_setting_to_file(path, "custom_boot", "cic_type", rom_info->boot_override.cic_type, ROM_CIC_TYPE_AUTOMATIC);
 }
 
 rom_save_type_t rom_info_get_save_type (rom_info_t *rom_info) {
-    if (rom_info->override.save) {
-        return rom_info->override.save_type;
+    if (rom_info->boot_override.save) {
+        return rom_info->boot_override.save_type;
     } else {
         return rom_info->save_type;
     }
 }
 
-rom_err_t rom_info_override_save_type (path_t *path, rom_info_t *rom_info, rom_save_type_t save_type) {
-    rom_info->override.save = (save_type != SAVE_TYPE_AUTOMATIC);
-    rom_info->override.save_type = save_type;
+rom_err_t rom_config_override_save_type (path_t *path, rom_info_t *rom_info, rom_save_type_t save_type) {
+    rom_info->boot_override.save = (save_type != SAVE_TYPE_AUTOMATIC);
+    rom_info->boot_override.save_type = save_type;
 
-    return save_override(path, "save_type", rom_info->override.save_type, SAVE_TYPE_AUTOMATIC);
+    return save_rom_config_setting_to_file(path, "custom_boot", "save_type", rom_info->boot_override.save_type, SAVE_TYPE_AUTOMATIC);
 }
 
 rom_tv_type_t rom_info_get_tv_type (rom_info_t *rom_info) {
-    if (rom_info->override.tv) {
-        return rom_info->override.tv_type;
+    if (rom_info->boot_override.tv) {
+        return rom_info->boot_override.tv_type;
     } else {
         return rom_info->tv_type;
     }
 }
 
-rom_err_t rom_info_override_tv_type (path_t *path, rom_info_t *rom_info, rom_tv_type_t tv_type) {
-    rom_info->override.tv = (tv_type != ROM_TV_TYPE_AUTOMATIC);
-    rom_info->override.tv_type = tv_type;
+rom_err_t rom_config_override_tv_type (path_t *path, rom_info_t *rom_info, rom_tv_type_t tv_type) {
+    rom_info->boot_override.tv = (tv_type != ROM_TV_TYPE_AUTOMATIC);
+    rom_info->boot_override.tv_type = tv_type;
 
-    return save_override(path, "tv_type", rom_info->override.tv_type, ROM_TV_TYPE_AUTOMATIC);
+    return save_rom_config_setting_to_file(path, "custom_boot", "tv_type", rom_info->boot_override.tv_type, ROM_TV_TYPE_AUTOMATIC);
 }
 
-rom_err_t rom_info_load (path_t *path, rom_info_t *rom_info) {
+rom_err_t rom_config_setting_set_cheats (path_t *path, rom_info_t *rom_info, bool enabled) {
+    rom_info->settings.cheats_enabled = enabled;
+    return save_rom_config_setting_to_file(path, NULL, "cheats_enabled", enabled, false);
+}
+
+#ifdef FEATURE_PATCHER_GUI_ENABLED
+rom_err_t rom_config_setting_set_patches (path_t *path, rom_info_t *rom_info, bool enabled) {
+    rom_info->settings.patches_enabled = enabled;
+    return save_rom_config_setting_to_file(path, NULL, "patches_enabled", enabled, false);
+}
+#endif
+
+rom_err_t rom_config_load (path_t *path, rom_info_t *rom_info) {
     FILE *f;
     rom_header_t rom_header;
 
@@ -970,7 +956,7 @@ rom_err_t rom_info_load (path_t *path, rom_info_t *rom_info) {
 
     extract_rom_info(&match, &rom_header, rom_info);
 
-    load_overrides(path, rom_info);
+    load_rom_config_from_file(path, rom_info);
 
     return ROM_OK;
 }

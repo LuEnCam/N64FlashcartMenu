@@ -68,7 +68,8 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_seekbar_draw(mp3player_get_progress());
 
-    ui_components_main_text_draw(STL_DEFAULT,
+    ui_components_main_text_draw(
+        STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
         "MUSIC PLAYER\n"
         "\n"
@@ -84,7 +85,8 @@ static void draw (menu_t *menu, surface_t *d) {
         mp3player_get_duration()
     );
 
-    ui_components_main_text_draw(STL_DEFAULT,
+    ui_components_main_text_draw(
+        STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "\n"
@@ -103,11 +105,18 @@ static void draw (menu_t *menu, surface_t *d) {
         mp3player_get_samplerate()
     );
 
-    ui_components_actions_bar_text_draw(STL_DEFAULT,
+    ui_components_actions_bar_text_draw(
+        STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "A: %s\n"
-        "B: Exit | Left / Right: Rewind / Fast forward",
+        "B: Exit\n",
         mp3player_is_playing() ? "Pause" : mp3player_is_finished() ? "Play again" : "Play"
+    );
+
+    ui_components_actions_bar_text_draw(
+        STL_DEFAULT,
+        ALIGN_CENTER, VALIGN_TOP,
+        "◀ Rewind | Fast forward ▶\n"
     );
 
     rdpq_detach_show();

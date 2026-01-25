@@ -5,83 +5,112 @@
 #include "../sound.h"
 #include "../fonts.h"
 #include <fatfs/ff.h>
+#include "utils/cpakfs_utils.h"
 
 
-char cpak_path[255];
-short controller_selected_for_restore;
-char failure_message[255];
-bool start_complete_restore;
+static char cpak_path[255];
+static int16_t controller_selected;
+static char failure_message[255];
+static bool start_complete_restore;
 
-bool has_cpak(int controller) {
-    
-    joypad_accessory_type_t val =  joypad_get_accessory_type(controller);
+#define CONTROLLERPAK_BANK_SIZE 32768
 
-    return val == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK;
-}
-
-bool restore_controller_pak(int controller) {
+static bool restore_controller_pak(int controller) {
     sprintf(failure_message, " ");
 
     if (!has_cpak(controller)) {
-        //"No controller pak detected!"
-        sprintf(failure_message, "No controller pak detected on controller %d!", controller + 1);
+        sprintf(failure_message, "No Controller Pak detected on controller %d!", controller + 1);
         return false;
     }
 
-    uint8_t* data = malloc(MEMPAK_BLOCK_SIZE * 128 * sizeof(uint8_t));
-    FILE *fp = fopen(cpak_path, "r");
+    cpakfs_unmount(controller);
+
+    uint8_t *data = malloc(CONTROLLERPAK_BANK_SIZE);
+    if (!data) {
+        sprintf(failure_message, "Memory allocation failed!");
+        return false;
+    }
+
+    FILE *fp = fopen(cpak_path, "rb");
     if (!fp) {
-        //"Failed to open file for reading!"
         sprintf(failure_message, "Failed to open file for reading!");
         free(data);
         return false;
     }
-    if (fread(data, 1, MEMPAK_BLOCK_SIZE * 128, fp) != MEMPAK_BLOCK_SIZE * 128) {
-        //"Failed to read data from file!"
-        sprintf(failure_message, "Failed to read data from file!");
+
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        sprintf(failure_message, "Seek failed!");
         fclose(fp);
         free(data);
         return false;
     }
-    fclose(fp);
+    long filesize = ftell(fp);
+    if (filesize < 0) {
+        sprintf(failure_message, "ftell failed!");
+        fclose(fp);
+        free(data);
+        return false;
+    }
+    rewind(fp);
 
-    for (int i = 0; i < 128; i++) { 
-        if (write_mempak_sector(controller_selected_for_restore, i, data + (i * MEMPAK_BLOCK_SIZE)) != 0) {
-            //"Failed to write to mempak sector!"
-            sprintf(failure_message, "Failed to write to mempak sector!");
+    int total_banks = (int)((filesize + CONTROLLERPAK_BANK_SIZE - 1) / CONTROLLERPAK_BANK_SIZE);
+
+    int banks_on_device = cpak_probe_banks(controller);
+    if (banks_on_device < 1) {
+        sprintf(failure_message, "Cannot probe Controller Pak banks (err=%d)!", banks_on_device);
+        fclose(fp);
+        free(data);
+        return false;
+    }
+    if (total_banks > banks_on_device) {
+        sprintf(failure_message, "Dump file too large (%d banks) for controller (%d banks)!",
+                total_banks, banks_on_device);
+        fclose(fp);
+        free(data);
+        return false;
+    }
+
+    debugf("Restoring Controller Pak: %ld bytes (%d banks)\n", filesize, total_banks);
+
+    for (int bank = 0; bank < total_banks; bank++) {
+        size_t bytesRead = fread(data, 1, CONTROLLERPAK_BANK_SIZE, fp);
+        if (bytesRead == 0 && ferror(fp)) {
+            sprintf(failure_message, "Read error from dump file!");
+            fclose(fp);
             free(data);
             return false;
         }
-        
+        if (bytesRead == 0 && feof(fp)) break; // empty trailing chunk (shouldn't happen)
 
-        surface_t *d = display_try_get();
-        rdpq_attach(d, NULL);
-
-        ui_components_layout_draw();
-
-        
-        ui_components_messagebox_draw(
-            "Do you want to restore this dump to the controller Pak?\n\n"
-            "Controller selected: %d\n\n"
-            "A: Yes  B: No \n"
-            "<- / ->: Change controller",
-            controller_selected_for_restore + 1
-        );
-        ui_components_loader_draw((float) i / 128.0f);
-        rdpq_detach_show();
+        int written = cpak_write((joypad_port_t)controller, (uint8_t)bank, 0, data, bytesRead);
+        if (written < 0) {
+            sprintf(failure_message, "Failed to write bank %d to Controller Pak! errno=%d", bank, written);
+            fclose(fp);
+            free(data);
+            return false;
+        }
+        if ((size_t)written != bytesRead) {
+            sprintf(failure_message, "Short write on bank %d: wrote %d / %zu bytes", bank, written, bytesRead);
+            fclose(fp);
+            free(data);
+            return false;
+        }
     }
 
+    fclose(fp);
     free(data);
+
+    sprintf(failure_message, "Dump restored on controller %d!", controller + 1);
     return true;
 }
 
 static void process (menu_t *menu) {
     if (menu->actions.go_left) {
-        sound_play_effect(SFX_SETTING);
-        controller_selected_for_restore = ((controller_selected_for_restore - 1) + 4) % 4;
+        sound_play_effect(SFX_CURSOR);
+        controller_selected = ((controller_selected - 1) + 4) % 4;
     } else if (menu->actions.go_right) {
-        sound_play_effect(SFX_SETTING);
-        controller_selected_for_restore = ((controller_selected_for_restore + 1) + 4) % 4;
+        sound_play_effect(SFX_CURSOR);
+        controller_selected = ((controller_selected + 1) + 4) % 4;
     } else if (menu->actions.back) {
         sound_play_effect(SFX_EXIT);
         menu->next_mode = MENU_MODE_BROWSER;
@@ -108,23 +137,31 @@ static void draw (menu_t *menu, surface_t *d) {
         "\n"
         "%s\n"
         "\n"
+        "\n",
+        cpak_path
+    );
+    ui_components_main_text_draw(STL_ORANGE,
+        ALIGN_CENTER, VALIGN_TOP,
+        "\n"
+        "\n"
+        "\n"
         "%s\n",
-        cpak_path,
         failure_message
     );
 
     
     ui_components_messagebox_draw(
-        "Do you want to restore this dump to the controller Pak?\n\n"
+        "Do you want to restore this dump to the Controller Pak?\n\n"
         "Controller selected: %d\n\n"
         "A: Yes  B: No \n"
-        "<- / ->: Change controller",
-        controller_selected_for_restore + 1
+        "◀- / -▶: Change controller",
+        controller_selected + 1
     );
 
     if (start_complete_restore) {
+        ui_components_loader_draw(0, "Writing Controller Pak...");
         rdpq_detach_show();
-        if (restore_controller_pak(controller_selected_for_restore)) {
+        if (restore_controller_pak(controller_selected) && !failure_message[0]) {
             menu->next_mode = MENU_MODE_BROWSER;
         } 
         start_complete_restore = false;
@@ -143,6 +180,7 @@ void view_controller_pak_dump_info_init (menu_t *menu) {
     start_complete_restore = false;
     sprintf(failure_message, " ");
 
+    path_free(path);
 }
 
 void view_controller_pak_dump_info_display (menu_t *menu, surface_t *display) {

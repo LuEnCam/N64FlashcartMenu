@@ -6,6 +6,151 @@ built from latest commit on main branch.
 - For the 64Drive, use the `menu.bin` file in the root of your SD card.
 - For the ares emulator, use the `N64FlashcartMenu.n64` file.
 
+## Release Notes 2025-12-04 - Tagged 0.3.1
+
+- **New Features**
+	- Settings contexts now preset to the saved option.
+	- Added latest Viewpoint64 final proto ROM to database.
+	- Added Rumble PAK and Transfer PAK features to ROM info screen.
+
+- **Bug Fixes**
+	- Fixed MP3 Player crashes menu if the MP3 file's sample rate is less than 44100 hz and menu SFX are enabled.
+	- Fixed game_code_path size that caused crash when loading homebrew boxart.
+	- Fixed boot process which could lead to blank screens or crashes.
+	- Fixed a potential issue that could happen when a RTC was not detected.
+
+
+- **Documentation**
+	- Moved ED64 documentation to [98_flashcart_wip.md](./docs/98_flashcart_wip.md)
+	- Other minor fixes.
+
+- **Refactor**
+	- Output 4MB files as MB, rather than kB.
+	- Improved icons for direction.
+	- Controller Pak now selects notes using up/down rather than left/right.
+
+- **Other**
+	- Updated libDragon SDK.
+	- Updated docker container to Trixy
+
+### Breaking changes
+- None.
+
+
+### Current known Issues
+- Menu sound FX may not work properly when a 64 Disk Drive is also attached (work around: turn sound FX off).
+- Fast Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu. This is expected until disk swapping is implemented.
+
+
+### Deprecation notices
+- None.
+
+
+## Release Notes 2025-11-15 - Tagged 0.3.0
+
+- **New Features**
+	- Added ability to hide save folders (on by default).
+	- Added ability to reset the menu setting to default from the menu UI.
+	- Updated the UI font to Firple-Bold which supports more characters.
+	- Shows info message within the loading progress bar.
+	- Add the ability to display ESRB age ratings (see [documentation](./docs/65_experimental.md)).
+	- Add Beta Datel code GUI (see [documentation](./docs/13_datel_cheats.md)).
+	- Add ability to load boxart from ROMs that use the homebrew header (see [documentation](./docs/19_gamepak_boxart.md)).
+	- Add ability to extract files from ZIP archives (thanks [VicesOfTheMind](https://github.com/VicesOfTheMind)).
+	- Add Alpha FEATURE_PATCHER_GUI_ENABLED (build flag to enable it).
+	- Add Controller Pak manager (thanks [LuEnCam](https://github.com/LuEnCam))
+	- Add Game art image switching (thanks [dpranker](https://github.com/dpranker))
+
+- **Bug Fixes**
+	- Fix ability to set the RTC via menu (Hotfixed in last release).
+	- Fix Game ID (used by PixelFX HDMI mods) sent over Joybus is not working (Hotfixed in last release).
+	- Fix GB / GBC emulator not saving in certain circumstances (Hotfixed in last release).
+	- Fix issue with emulation of cold boot, as otherwise the FPU might start in an unexpected state.
+	- Fix missing enum case for 1 Mbit SRAM saves (Hotfixed in last release).
+
+- **Documentation**
+	- Improved Emulator information for known working NES emulator version.
+	- Updated experimental features to reflect feature change.
+	- Added sounds documentation.
+	- Updated autoload to reflect feature change.
+
+- **Refactor**
+	- Improve tab navigation by using any left/right control input and add cursor SFX.
+	- Add ability for font style to be used in ui_components_main_text_draw and ui_components_actions_bar_text_draw.
+
+- **Other**
+	- Updated libDragon SDK.
+	- Updated miniz library.
+	- Updated Github templates.
+
+### Breaking changes
+* Deprecated "Autoload ROM" function was removed from menu (use `FEATURE_AUTOLOAD_ROM_ENABLED` as a build flag to re-enable it).
+* Deprecated Boxart image handler was removed (see [documentation](./docs/19_gamepak_boxart.md) for new boxart link).
+* ROM's that used custom CIC, TV and/or Save type set from the menu will need to re-set them, now uses "custom_boot" header within the ini file.
+
+
+### Current known Issues
+* Menu sound FX may not work properly when a 64 Disk Drive is also attached (work around: turn sound FX off).
+* Fast Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu. This is expected until disk swapping is implemented.
+* MP3 Player crashes menu if the MP3 file's sample rate is less than 44100 hz and menu SFX are enabled.
+
+
+### Deprecation notices
+* Boxart directory has changed to metadata directory.
+
+
+## Release Notes 2025-03-31 - Tagged 0.2.0
+
+- **New Features**
+	- Introduced tabs in main menu for ROM favorites and recently played ROM history.
+	- Introduced first run check to ensure users are aware of latest changes.
+	- Introduced ability to turn off GUI loading bar.
+	- BETA_FEATURE: Introduces ROM descriptions from files.
+	- BETA_FEATURE: Enabled setting for fast ROM reboots on the SC64.
+	- Add macOS metadata to hidden files.
+	- Added settings schema version for future change versioning.
+	- Added setting for PAL60 compatibility mode (see breaking changes).
+	- BETA_FEATURE: Added setting for line doublers that need progressive output, enable using "force_progressive_scan" setting in `config.ini`.
+
+
+- **Bug Fixes**
+	- Menu sound FX issues (hissing, popping and white noise).
+	- RTC not showing or setting correct date parameters in certain circumstances.
+	- ~~GB / GBC emulator not saving in certain circumstances.~~
+
+
+- **Documentation**
+	- Re-orginised and improved user documentation.
+	- Added a lot of doxygen compatible code comments.
+	- Added project license.
+
+
+- **Refactor**
+	- RTC subsystem (align with libDragon improvements).
+	- Boxart images (Deprecates old boxart image folder layout).
+	- Settings (PAL60 compatibility, schema version, fast reboot, first run, progress bar).
+
+- **Other**
+	- Updated libDragon SDK.
+	- Updated miniz library.
+
+### Breaking changes
+* ~~GB /GBC emulator changed save type to SRAM (from FRAM) to improve compatibility with Summercart64 (which only uses H/W compatible FRAM), this may break your ability to load existing saves.~~
+* For similar PAL60 functionality, you may need to also enable the new "pal60_compatibility_mode" setting in `config.ini`.
+
+
+### Current known Issues
+* The RTC UI requires improvement (awaiting UI developer).
+* Menu sound FX may not work properly when a 64 Disk Drive is also attached (work around: turn sound FX off).
+* Fast Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu. This is expected until disk swapping is implemented.
+* MP3 Player crashes menu if the MP3 file's sample rate is less than 44100 hz.
+
+
+### Deprecation notices
+* Autoload ROM's will be deprecated in favor of Fast Reboot in a future menu version.
+* Old boxart images using filenames for game ID is deprecated and the compatibility mode will be removed in a future release.
+
+
 ## Release Notes 2025-01-10
 
 - **Bug Fixes**
