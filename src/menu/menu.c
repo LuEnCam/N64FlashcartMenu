@@ -109,7 +109,7 @@ static void menu_init (boot_params_t *boot_params) {
         .width = 640,
         .height = 480,
         .interlaced = interlaced ? INTERLACE_HALF : INTERLACE_OFF,
-        .pal60 = menu->settings.pal60_enabled, // this may be overridden by the PAL60 compatibility mode.
+        //.pal60 = menu->settings.pal60_enabled, // this may be overridden by the PAL60 compatibility mode.
     };
 
     display_init(resolution, DEPTH_16_BPP, 2, GAMMA_NONE, interlaced ? FILTERS_DISABLED : FILTERS_RESAMPLE);

@@ -19,10 +19,6 @@ static void process (menu_t *menu) {
         sound_play_effect(SFX_EXIT);
         menu->next_mode = MENU_MODE_BROWSER;
     }
-
-    if (is_memory_pak_dump && menu->actions.enter) {
-        menu->next_mode = MENU_MODE_CONTROLLER_PAK_DUMP_INFO;
-    }
 }
 
 static void draw (menu_t *menu, surface_t *d) {
@@ -59,7 +55,6 @@ static void draw (menu_t *menu, surface_t *d) {
 
 
 void view_file_info_init (menu_t *menu) {
-    is_memory_pak_dump = false;
     path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
 
     if (stat(path_get(path), &st)) {

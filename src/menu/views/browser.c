@@ -445,7 +445,6 @@ static component_context_menu_t settings_context_menu = {
         { .text = "Controller Pak manager", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_CONTROLLER_PAKFS) },
         { .text = "Menu settings", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_SETTINGS_EDITOR) },
         { .text = "Time (RTC) settings", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_RTC) },
-        { .text = "Contr. Pak settings", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_CONTROLLER_PAK) },
         { .text = "Menu information", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_CREDITS) },
         { .text = "Flashcart information", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_FLASHCART) },
         { .text = "N64 information", .action = set_menu_next_mode, .arg = (void *) (MENU_MODE_SYSTEM_INFO) },
@@ -578,8 +577,10 @@ static void draw (menu_t *menu, surface_t *d) {
     ui_components_actions_bar_text_draw(
         STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
-        "%s\n",
-        menu->browser.entries == 0 ? "" : action
+        "%s\n"
+        "^%02XB: Back^00",
+        menu->browser.entries == 0 ? "" : action,
+        path_is_root(menu->browser.directory) ? STL_GRAY : STL_DEFAULT
     );
 
     ui_components_actions_bar_text_draw(
